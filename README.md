@@ -2,7 +2,7 @@ This is our private repository for the development of Detecting Anomalies in Aud
 
 Please refer to the following subfolders for better organization.
 
-**Papers**
+**papers**
   * Files of related papers
   * Links to related papers
 
