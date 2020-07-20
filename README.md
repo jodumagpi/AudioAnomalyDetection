@@ -14,4 +14,6 @@ Please refer to the following subfolders for better organization.
 
 **data**
   * Train and Test dataset
-  
+
+**reports**
+  * PPTs and other related files 
