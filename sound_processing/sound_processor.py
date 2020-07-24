@@ -209,5 +209,6 @@ class DownSampler:
     def __init__(self, sr):
         self.sr = sr
         
-    def downsample(self, y, orig_sr):
+    def downsample(self, y, orig_sr):.
+        y = librosa.to_mono(y.astype(np.float))
         return librosa.resample(y=y, orig_sr=orig_sr, target_sr=self.sr)
