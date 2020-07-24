@@ -201,6 +201,9 @@ class DownSampler:
         Args:
         
         sr (int) : target sample rate
+        
+        Returns:
+        array: downsampled signal
     """
     
     def __init__(self, sr):
