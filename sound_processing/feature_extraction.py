@@ -60,5 +60,4 @@ class FeatureExtractor:
     self.extracted_features.append(self.rmse(data, hop_length))
     self.extracted_features.append(self.mfcss(data, sr))
     self.extracted_features.append(self.chromas(data, sr, hop_length))
-
     return np.asarray(self.extracted_features)
