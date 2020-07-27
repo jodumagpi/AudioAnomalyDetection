@@ -1,4 +1,3 @@
-from scipy.io import wavfile
 import scipy.signal
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,6 +6,25 @@ import time
 import soundfile as sf
 from datetime import timedelta as td
 import scipy
+
+class DownSampler:
+    """
+        Downsamples the signal to a desired frequency.
+        
+        Args:
+        
+        sr (int) : target sample rate
+        
+        Returns:
+        (array) : downsampled signal
+    """
+    
+    def __init__(self, sr):
+        self.sr = sr
+        
+    def downsample(self, y, orig_sr):
+        y = librosa.to_mono(y)
+        return librosa.resample(y=y, orig_sr=orig_sr, target_sr=self.sr)
 
 class Denoiser:
     """
@@ -87,22 +105,24 @@ class Denoiser:
         ax[1].set_title("Filter for smoothing Mask")
         plt.show()
     
-    def denoise(self, audio_clip, noise_clip):
+    def denoise(self, audio_clip, noise_clip, len_clip):
         """Remove noise from audio based upon a clip containing only noise
 
         Args:
             audio_clip (array): Input audio
             noise_clip (array): Input noise
+            len_clip (float): Length of the audio file in seconds
             
             Returns:
             array: The recovered signal with noise subtracted
         """
         verbose = self.verbose
         visual = self.visual
+        self.delta = len_clip
         
         # convert stereo to mono
-        self.audio_clip = librosa.to_mono(audio_clip.astype(np.float))
-        self.noise_clip = librosa.to_mono(noise_clip.astype(np.float))
+        self.audio_clip = librosa.to_mono(audio_clip)
+        self.noise_clip = librosa.to_mono(noise_clip)
         if verbose:
             print('Converting stereo data to mono data.')
 
@@ -178,6 +198,7 @@ class Denoiser:
             start = time.time()
         # recover the signal
         recovered_signal = self.istft(sig_stft_amp, self.hop_len, self.win_len)
+        recovered_rate = int(len(recovered_signal.flatten())/self.delta)
         recovered_spec = self.amp_to_db(
             np.abs(self.stft(recovered_signal, self.n_fft, self.hop_len, self.win_len))
         )
@@ -192,23 +213,4 @@ class Denoiser:
             self.plot_spectrogram(sig_mask, title="Mask applied")
             self.plot_spectrogram(sig_stft_db_masked, title="Masked signal")
             self.plot_spectrogram(recovered_spec, title="Recovered spectrogram")
-        return recovered_signal
-
-class DownSampler:
-    """
-        Downsamples the signal to a desired frequency.
-        
-        Args:
-        
-        sr (int) : target sample rate
-        
-        Returns:
-        array: downsampled signal
-    """
-    
-    def __init__(self, sr):
-        self.sr = sr
-        
-    def downsample(self, y, orig_sr):.
-        y = librosa.to_mono(y.astype(np.float))
-        return librosa.resample(y=y, orig_sr=orig_sr, target_sr=self.sr)
+        return recovered_rate, recovered_signal
