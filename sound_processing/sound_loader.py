@@ -20,13 +20,16 @@ class SoundLoader:
         root_dir (path): Path to the root directory
         data_dir (path): Path to the CSV file
         noise_dir (path): Path to the noise profile 
-        sample_rate (int): Frequency for downsampling
+        sample_rate (int): Frequency used when downsampling is enabled
         sample_per_label (int): Number of times to sample from a label
         sample_len (int): Fixed length of the audio sample in seconds
         val (bool): If validation set is required
         data_split (list or array): Percentage of split for training, validation and testing (train, val, test)
         train_batch (int): Batch size of the training set
         loader (string): Type of loader ['keras' or 'pytorch']
+		_downsample_ (bool): Whether to downsample the input
+		_denoise_ (bool): Whether to apply noise reduction to the input
+		extractors (list[func]): List of functions you want to use as feature extractors
         shuffle (bool): Whether to shuffle the training set
         seed (int): Seed for random processes
         
@@ -43,12 +46,17 @@ class SoundLoader:
                  data_split=[60, 20, 20],
                  train_batch = 32,
                  loader='pytorch',
+				 _downsample_ = True,
+				 _denoise_ = True,
+				 extractors=None,
                  shuffle=True,
                  seed=555):
         
         self.root_dir = root_dir
         self.data_dir = data_dir
         self.noise_dir = noise_dir
+        self._downsample_ = _downsample_
+        self._denoise_ = _denoise_
         self.data = pd.read_csv(os.path.join(self.root_dir, self.data_dir))
         self.sample_rate = sample_rate
         self.sample_per_label = sample_per_label
@@ -67,6 +75,7 @@ class SoundLoader:
             
         self.train_batch = train_batch
         self.loader = loader
+        self.extractors = extractors
         self.shuffle = shuffle
         self.seed = seed
         
@@ -88,14 +97,18 @@ class SoundLoader:
         filenames = np.unique(self.data['filename'].values) # get unique filenames
         for file in filenames:
             data_rate, cur_data = wavfile.read(os.path.join(self.root_dir, file))
-            cur_data = cur_data.astype(np.float32)
+            cur_data = cur_data.T.astype(np.float32)
+            _sample_rate = data_rate
             # denoise
-            delta = len(cur_data.T[0])/data_rate
-            data_rate, cur_data = self.denoiser.denoise(cur_data.T, self.noise.T, delta)
+            if self._denoise_:
+                delta = len(cur_data[0])/data_rate
+                data_rate, cur_data = self.denoiser.denoise(cur_data, self.noise.T, delta)
             # downsample
-            cur_data = self.downsampler.downsample(cur_data, data_rate)
+            if self._downsample_:
+                cur_data = self.downsampler.downsample(cur_data, data_rate)
+                _sample_rate = self.sample_rate
+			
             annos = self.data[self.data['filename'] == file]
-            
             idxs = [] # indices of positive samples
             
             for i in range(len(annos)):
@@ -103,7 +116,7 @@ class SoundLoader:
                 start, end = int(start[0]*100 + start[1]*60), int(end[0]*100 + end[1]*60) + 1
                 
                 # trim out positive samples (negatives remain)
-                t1, t2 = start * self.sample_rate, end * self.sample_rate 
+                t1, t2 = start * _sample_rate, end * _sample_rate
                 idxs.append(np.arange(t1, t2, 1))
                 
                 # get samples for positives
@@ -112,19 +125,19 @@ class SoundLoader:
                     if len(dur) >= self.sample_len:
                         t1 = random.sample(list(dur), 1)[0]
                         t2 = t1 + self.sample_len
-                        t1, t2 = int(t1 * self.sample_rate), int(t2 * self.sample_rate)
+                        t1, t2 = int(t1 * _sample_rate), int(t2 * _sample_rate)
                         x = cur_data[t1:t2]                    
-                        self.dataset['inputs'].append(x)
+                        self.dataset['inputs'].append(self.extract_features(x))
                         self.dataset['labels'].append(annos.iloc[i]['label'])
                     else:
                         x = []
                         pad_times = 1 + int(self.sample_len/(end-start)) + int((self.sample_len%(end-start)))
                         for j in range(pad_times):
-                            t1, t2 = int(start * self.sample_rate), int(end * self.sample_rate)
+                            t1, t2 = int(start * _sample_rate), int(end * _sample_rate)
                             x.append(cur_data[t1:t2])
                         x = np.hstack(x)
-                        x = x[:self.sample_len * self.sample_rate]
-                        self.dataset['inputs'].append(x)
+                        x = x[:self.sample_len * _sample_rate]
+                        self.dataset['inputs'].append(self.extract_features(x))
                         self.dataset['labels'].append(annos.iloc[i]['label'])
             
             # get samples for negatives
@@ -135,17 +148,28 @@ class SoundLoader:
             idxs = random.sample(list(range(len(neg_data))), len(annos)) # index for sampling negative sounds
             for idx in idxs:
                 t1 = idx
-                t2 = t1 + self.sample_rate * self.sample_len
+                t2 = t1 + _sample_rate * self.sample_len
 
                 x = neg_data[t1:t2]
-                if len(x) < (self.sample_rate*self.sample_len):
+                if len(x) < (_sample_rate*self.sample_len):
                     pass
                 else:
-                    self.dataset['inputs'].append(x)
+                    self.dataset['inputs'].append(self.extract_features(x))
                     self.dataset['labels'].append(np.array([0], dtype=np.int64)[0])
         
         return self.dataset
     
+    def extract_features(self, x):
+		
+        feats = []
+        if self.extractors:       
+            for e in self.extractors:
+                feats.extend(e(x=x, sr=self.sample_rate, hop_len=512))
+            feats = np.asarray(feats)
+        else:
+            feats = x
+        return feats
+			
     def data_loader(self):
         """
             Create dataloaders for pytorch or keras.
