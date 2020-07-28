@@ -27,5 +27,5 @@ sl = SoundLoader('./sample/', 'labels.csv', 'reduced_noise.wav', extractors=extr
 dataset = sl.data_maker() # gives a dictionary of the inputs (numpy arrays) and corresponding labels
 
 # if you want to get the dataloaders directly
-dataset = sl.data_loader() # gives dataloaders ready for training and testing
+loaders = sl.data_loader(dataset) # gives dataloaders ready for training and testing
 ```
