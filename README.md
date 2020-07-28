@@ -2,10 +2,6 @@ This is our private repository for the development of Detecting Anomalies in Aud
 
 Please refer to the following subfolders for better organization.
 
-**papers**
-  * Files of related papers
-  * Links to related papers
-
 **sound_processing**
   * Python modules related to sound processing
   
@@ -14,6 +10,22 @@ Please refer to the following subfolders for better organization.
 
 **data**
   * Train and Test dataset
+  
+-----
+  
+**HOW TO GENERATE YOUR OWN DATA**
 
-**reports**
-  * PPTs and other related files 
+```python
+from sound_loader import SoundLoader
+from feature_extractor import FeatureExtractor
+
+# select the features you want to use (in this case, we just pick two features)
+F = FeatureExtractor()
+extractors = [F.spectral_centroid, F.rmse] # F.features if you want to use all instead
+
+sl = SoundLoader('./sample/', 'labels.csv', 'reduced_noise.wav', extractors=extractors, seed=555)
+dataset = sl.data_maker() # gives a dictionary of the inputs (numpy arrays) and corresponding labels
+
+# if you want to get the dataloaders directly
+dataset = sl.data_loader() # gives dataloaders ready for training and testing
+```
