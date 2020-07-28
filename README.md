@@ -16,8 +16,8 @@ Please refer to the following subfolders for better organization.
 **HOW TO GENERATE YOUR OWN DATA**
 
 ```python
-from sound_loader import SoundLoader
-from feature_extractor import FeatureExtractor
+from sound_processing.sound_loader import SoundLoader
+from sound_processing.feature_extractor import FeatureExtractor
 
 # select the features you want to use (in this case, we just pick two features)
 F = FeatureExtractor()
