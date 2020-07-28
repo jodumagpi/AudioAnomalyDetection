@@ -44,7 +44,7 @@ class SoundLoader:
                  sample_len=1, 
                  val=True, 
                  data_split=[60, 20, 20],
-                 train_batch = 32,
+                 train_batch = 1,
                  loader='pytorch',
 				 _downsample_ = True,
 				 _denoise_ = True,
@@ -85,14 +85,12 @@ class SoundLoader:
         self.downsampler = DownSampler(self.sample_rate)
         self.denoiser = Denoiser()
         
-        # data
-        self.dataset = {'inputs':[], 'labels':[]}
-        
     def data_maker(self):
         """
             Segment audio data. 
             Do preprocessing and feature extraction.
         """
+        self.dataset = {'inputs':[], 'labels':[]}
         random.seed(self.seed)
         filenames = np.unique(self.data['filename'].values) # get unique filenames
         for file in filenames:
@@ -170,12 +168,11 @@ class SoundLoader:
             feats = x
         return feats
 			
-    def data_loader(self):
+    def data_loader(self, dataset):
         """
             Create dataloaders for pytorch or keras.
         """
-        self.data_maker() #make the dataset
-        inputs, labels = np.array(self.dataset['inputs']), np.array(self.dataset['labels'])
+        inputs, labels = np.array(dataset['inputs']), np.array(dataset['labels'])
         idxs = list(range(len(inputs)))
         random.seed(self.seed)
         if self.shuffle: random.shuffle(idxs)
