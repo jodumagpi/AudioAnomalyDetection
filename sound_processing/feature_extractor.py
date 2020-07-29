@@ -44,12 +44,12 @@ class FeatureExtractor:
 		return librosa.feature.chroma_stft(x, sr=sr, hop_length=hop_len)
 	
 	def features(self, x, sr, hop_len):
-		self.extracted_features.extend(self.spectral_centroid(x=x, sr=sr))
-		self.extracted_features.extend(self.spectral_rolloff(x=x, sr=sr))
-		self.extracted_features.extend(self.spectral_bandwidth(x=x, sr=sr))
-		self.extracted_features.extend(self.spectral_flatness(x=x))
-		self.extracted_features.extend(self.rmse(x=x, hop_len=hop_len))
-		self.extracted_features.extend(self.mfcss(x=x, sr=sr))
-		self.extracted_features.extend(self.chromas(x=x, sr=sr, hop_len=hop_len))
+		self.extracted_features.extend(self.spectral_centroid(x, sr, hop_len))
+		self.extracted_features.extend(self.spectral_rolloff(x, sr, hop_len))
+		self.extracted_features.extend(self.spectral_bandwidth(x, sr, hop_len))
+		self.extracted_features.extend(self.spectral_flatness(x, sr, hop_len))
+		self.extracted_features.extend(self.rmse(x, sr, hop_len))
+		self.extracted_features.extend(self.mfccs(x, sr, hop_len))
+		self.extracted_features.extend(self.chromas(x, sr, hop_len))
 	
 		return np.asarray(self.extracted_features)	
