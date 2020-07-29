@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import TensorDataset, DataLoader
-from sound_processor import DownSampler, Denoiser
+from .sound_processor import DownSampler, Denoiser
 from scipy.io import wavfile
 import pandas as pd
 import numpy as np
@@ -10,7 +10,8 @@ import random
 import IPython
 import tensorflow as tf
 import matplotlib.pyplot as plt
-tf.enable_eager_execution()
+
+if float(tf.__version__[0]) < 2.0: tf.enable_eager_execution()
 
 class SoundLoader:
     """
