@@ -1,4 +1,4 @@
-This is our private repository for the development of Detecting Anomalies in Audio Data.
+This is our project repository for the development of Detecting Anomalies in Audio Data.
 
 Please refer to the following subfolders for better organization.
 
